@@ -318,9 +318,7 @@ This command shows the habits you struggled with the most in the last specified 
 ```bash
 python cli.py leaderboard
 ```
-```bash
-python cli.py leaderboard
-```
+
 This command shows the top users with the longest streaks.
 
 ## Troubleshooting
