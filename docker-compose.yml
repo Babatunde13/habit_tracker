@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: tracker
+      POSTGRES_PASSWORD: tracker
+      POSTGRES_DB: tracker
+    ports:
+      - "5432:5433"  # Exposing port 5432 for external access (localhost:5432)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Persist PostgreSQL data
+    networks:
+      - tracker-network
+    restart: unless-stopped
+
+  app:
+    build: .
+    volumes:
+      - .:/app
+    networks:
+      - tracker-network
+    environment:
+      - DATABASE_URL=postgresql://tracker:tracker@postgres:5433/tracker
+      - SECRET_KEY=secret
+      - ENV=production
+
+networks:
+  tracker-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
