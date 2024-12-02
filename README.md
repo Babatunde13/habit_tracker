@@ -95,6 +95,7 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
    pip install virtualenv # creates virtual environment
    . venv/bin/activate # or .\\venv\\Scripts\\Activate to activate virtual environment
    pip install -r requirements.txt # install dependencies
+   python configure_alembic.py # sets the db url inside the alembic.ini file
    ```
 
 2. **Set Up the PostgreSQL Database**:

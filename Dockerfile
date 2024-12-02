@@ -22,6 +22,8 @@ RUN pip install -r requirements.txt
 # Copy your application code into the container
 COPY . .
 
+RUN python configure_alembic.py
+
 # run migrations
 RUN make migrate-up
 
