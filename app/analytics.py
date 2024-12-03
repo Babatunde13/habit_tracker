@@ -12,7 +12,7 @@ def get_leaderboard(db: Session):
     users = user_service.get_all_users()
 
     for user in users:
-        streak = sum(habit.get_streaks() for habit in user.habits)
+        streak = sum(habit.get_current_streaks() for habit in user.habits)
         leaderboard.append((user.name, streak))
 
     # Sort by streak (highest streak first)
@@ -27,17 +27,23 @@ def get_user_longest_streak(user: User):
     longest_streak = 0
     habit_with_longest_streak = None
     for habit in user.habits:
-        current_streak = habit.get_streaks()
+        current_streak = habit.get_longest_streaks()
         if current_streak >= longest_streak:
             longest_streak = current_streak
             habit_with_longest_streak = habit
-    
+
     return habit_with_longest_streak, longest_streak
 
 def get_current_habits_for_period(db: Session, user_id: int, period: str):
     """Retrieve habits for the current period (daily/weekly/fortnightly/monthly/biannually/yearly)."""
     habit_service = HabitService(db)
     habits = habit_service.get_user_habits_for_period(user_id, period)
+    return habits
+
+def get_current_habits(db: Session, user_id: int):
+    """Retrieve habits for all periods."""
+    habit_service = HabitService(db)
+    habits = habit_service.get_user_habits_for_period(user_id)
     return habits
 
 def get_habits_struggled_most_last_period(db: Session, user_id: int, period: str):

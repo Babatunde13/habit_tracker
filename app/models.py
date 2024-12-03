@@ -72,7 +72,7 @@ class Habit(Base):
     user = relationship('User', back_populates='habits')
     tasks = relationship('Task', back_populates='habit', cascade='all, delete-orphan')
 
-    def get_streaks(self) -> int:
+    def get_current_streaks(self) -> int:
         """Dynamically compute the streak based on task completion."""
         streak = 0
         for task in reversed(self.tasks):
@@ -80,6 +80,20 @@ class Habit(Base):
                 streak += 1
             else:
                 break
+        return streak
+    
+    def get_longest_streaks(self) -> int:
+        """Dynamically compute the streak based on task completion."""
+        streak = 0
+        longest_streak = 0
+        for task in reversed(self.tasks):
+            if task.completed:
+                streak += 1
+            else:
+                if streak > longest_streak:
+                    longest_streak = streak
+
+                streak = 0
         return streak
 
     def add_task(self, description: str, start_date: datetime, end_date: datetime = None):

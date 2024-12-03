@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: tracker
       POSTGRES_DB: tracker
     ports:
-      - "5432:5433"  # Exposing port 5432 for external access (localhost:5432)
+      - "5433:5432"  # Exposing port 5432 for external access (localhost:5432)
     volumes:
       - postgres_data:/var/lib/postgresql/data  # Persist PostgreSQL data
     networks:
@@ -22,9 +22,11 @@ services:
     networks:
       - tracker-network
     environment:
-      - DATABASE_URL=postgresql://tracker:tracker@postgres:5433/tracker
-      - SECRET_KEY=secret
-      - ENV=production
+      DATABASE_URL: postgresql://tracker:tracker@postgres:5432/tracker  # Updated to match the correct port (5432)
+      SECRET_KEY: secret
+      ENV: production
+    depends_on:
+      - postgres
 
 networks:
   tracker-network:

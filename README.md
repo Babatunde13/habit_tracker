@@ -70,7 +70,7 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
    - **Sets up the PostgreSQL database**.
    - **Runs the application**.
    - **Creates dummy data** in the database.
-   - **Runs the scheduler** to automatically track missed tasks and update habit streaks.
+   - **Runs the scheduler** to automatically create tasks at the beginning of habits next period.
 
 3. **Access the Application**:
 
@@ -88,14 +88,22 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
 1. **Clone the Repository and setup dependencies**:
 
    ```bash
-   git clone <repository-url>
-   cd <repository-name>
+   git clone https://github.com/Babatunde13/habit_tracker.git
+   cd habit_tracker
+   ```
+
+   ##### Setup your virtual environment, this can vary depending on your OS
+   ```bash
    pip install --upgrade pip
    pip install virtualenv # creates virtual environment
    . venv/bin/activate # or .\\venv\\Scripts\\Activate to activate virtual environment
-   pip install -r requirements.txt # install dependencies
-   python configure_alembic.py # sets the db url inside the alembic.ini file
    ```
+
+   ##### Install dependencies
+   ```bash
+   pip install -r requirements.txt # install dependencies
+   ```
+   
 
 2. **Set Up the PostgreSQL Database**:
    - Create a PostgreSQL database locally (or use any external PostgreSQL instance).
@@ -104,10 +112,8 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
 
 3. **Run Migrations**:
 
-   Use `Makefile` commands to set up the database schema:
-
    ```bash
-   make migrate-up
+   python configure_alembic.py # sets the db url inside the alembic.ini file and runs migration
    ```
 
    This command will run the necessary migrations to set up the database schema.
@@ -117,7 +123,7 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
    Once the migrations are complete, run:
 
     ```bash
-   make init_data
+   make init_data # or "python init_data.py" if you do not have make command
    ```
 
    This will insert some dummy data into the database for testing purposes.
@@ -127,7 +133,7 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
    The scheduler will track missed tasks and update habit streaks:
 
     ```bash
-   make schedule
+   make schedule # or "python scheduler.py" if you do not have make command
    ```
 
 6. **Run the Application**:
@@ -256,10 +262,10 @@ python client.py longest-streak
 
 This command shows the longest streak for any of the user's habits.
 
-#### 10. **`current-habits`**: Show habits for a given period (e.g., weekly, monthly)
+#### 10. **`current-habits-for-period`**: Show current habits for a given period (e.g., weekly, monthly)
 
 ```bash
-python client.py current-habits
+python client.py current-habits-for-period
 ```
 
 **Options**:
@@ -313,7 +319,26 @@ python client.py update-habit
 
 This command updates a user's existing habit.
 
+#### 14. **`current-habits`**: Show current habits
+
+```bash
+python client.py current-habits
+```
+
+**Options**:
+- `--token`: The auth token of the user (required)
+
+#### 15. **`longest-streak-for-habit`**: Show longest streak for a given habit
+
+```bash
+python client.py longest-streak-for-habit
+```
+
+**Options**:
+- `--token`: The auth token of the user (required)
+- `--habit_id`: The ID of the habit (required)
+
 ## Troubleshooting
 - **Error: "User not found!"**: Make sure you are using a valid token obtained from the login process.
 - **Error: "Habit not found!"**: Ensure the habit ID is correct and belongs to the authenticated user.
-- **Error: "Invalid periodicity"**: Ensure you input a valid periodicity value (daily, weekly, etc.).
+- **Error: "Invalid periodicity"**: Ensure you input a valid periodicity value (daily, weekly, forthnightly, monthly, quarterly, bianually or yearly).

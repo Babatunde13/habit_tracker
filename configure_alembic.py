@@ -11,5 +11,12 @@ def set_db_url():
             else:
                 f.write(line)
 
+def migrate_up():
+    # run the following command in the terminal to migrate the database
+    # alembic upgrade head
+    from os import system
+    system("alembic upgrade head")
+
 if __name__ == "__main__":
     set_db_url()
+    migrate_up()

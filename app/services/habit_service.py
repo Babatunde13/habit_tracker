@@ -35,9 +35,13 @@ class HabitService:
         habit.name = name
         self.session.commit()
 
-    def get_streaks(self, habit: Habit):
+    def get_current_streaks(self, habit: Habit):
         """Get the current streak for a habit based on task completion."""
-        return habit.get_streaks()
+        return habit.get_current_streaks()
+    
+    def get_longest_streaks(self, habit: Habit):
+        """Get the current streak for a habit based on task completion."""
+        return habit.get_longest_streaks()
 
     def get_habit(self, user_id: int, habit_id: int):
         """Retrieve a habit by its ID."""
@@ -66,7 +70,10 @@ class HabitService:
         self.session.delete(habit)
         self.session.commit()
 
-    def get_user_habits_for_period(self, user_id: int, period: str):
+    def get_user_habits_for_period(self, user_id: int, period: str=None):
         """Retrieve habits for the current period (daily/weekly/fortnightly/monthly/biannually/yearly)."""
-        habits = self.session.query(Habit).filter(Habit.periodicity == period.lower(), Habit.user_id == user_id).all()
+        if period == None:
+            habits = self.session.query(Habit).filter(Habit.user_id == user_id).all()
+        else:
+            habits = self.session.query(Habit).filter(Habit.periodicity == period.lower(), Habit.user_id == user_id).all()
         return habits

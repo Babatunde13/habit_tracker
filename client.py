@@ -5,7 +5,7 @@ from app.services.user_service import UserService
 from app.database import SessionLocal
 from app.analytics import (
     get_leaderboard, get_user_longest_streak,
-    get_current_habits_for_period, get_habits_struggled_most_last_period
+    get_current_habits_for_period, get_habits_struggled_most_last_period, get_current_habits
 )
 from validation import (
     validate_create_habit, validate_register, validate_login,
@@ -237,7 +237,7 @@ def show_current_streaks(token: str):
 
     habits = user.habits
     for habit in habits:
-        streak = habit_service.get_streaks(habit)
+        streak = habit_service.get_current_streaks(habit)
         is_day = "day" if streak == 1 or streak == 0 else "days"
         click.echo(f"User {user.name} has habit {habit.name} with a current streak of {streak} {is_day}.")
 
@@ -261,11 +261,53 @@ def longest_streak(token: str):
     click.echo(f"User {user.name} has the longest streak of {streak} days for habit {habit.name}.")
     db.close()
 
+# Command to show the user's longest streak for habit
+@cli.command("longest-streak-for-habit")
+@click.option('--token', prompt='Token', help='The auth token of the user.')
+@click.option('--habit_id', prompt='Habit ID', help='The ID of the habit.', type=int)
+def longest_streak(token: str, habit_id: int):
+    db = next(get_db())
+    user = get_user_from_token(db, token)
+    if not user:
+        click.echo("User not found!")
+        return
+
+    habit_service = HabitService(db)
+    habit = habit_service.get_habit(user.id, habit_id)
+    if not habit:
+        click.echo("Habit not found")
+        return
+
+    streak = habit.get_longest_streaks()
+    click.echo(f"User {user.name} has the longest streak of {streak} days for habit {habit.name}.")
+    db.close()
+
 # Command to show the current habits for a period
 @cli.command("current-habits")
 @click.option('--token', prompt='Token', help='The auth token of the user.')
+def current_habits(token: str):
+    db = next(get_db())
+    user = get_user_from_token(db, token)
+    if not user:
+        click.echo("User not found!")
+        return
+
+    habits = get_current_habits(db, user.id)
+    if len(habits) < 0:
+        click.echo(f"No habits found for the user.")
+        return
+
+    click.echo(f"Current habits for user {user.name}:")
+    for habit in habits:
+        click.echo(f"{habit.id}. {habit.name} with a periodicity of {habit.periodicity} with a current streak of {habit.get_current_streaks()} days")
+
+    db.close()
+
+# Command to show the current habits for a period
+@cli.command("current-habits-for-period")
+@click.option('--token', prompt='Token', help='The auth token of the user.')
 @click.option('--period', prompt='Period', help='The period to check habits for (daily, weekly, etc.).')
-def current_habits(token: str, period: str):
+def current_habits_for_period(token: str, period: str):
     if not is_valid_periodicity(period):
         click.echo("Invalid period. Please provide a valid period (daily, weekly, forthnightly, monthly, quarterly, bianually, yearly)")
         return
@@ -283,7 +325,7 @@ def current_habits(token: str, period: str):
 
     click.echo(f"Current habits for user {user.name} for {period} period:")
     for habit in habits:
-        click.echo(f"{habit.id}. {habit.name} with a current streak of {habit.get_streaks()} days")
+        click.echo(f"{habit.id}. {habit.name} with a current streak of {habit.get_current_streaks()} days")
 
     db.close()
 
