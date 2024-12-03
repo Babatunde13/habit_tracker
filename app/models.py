@@ -54,11 +54,6 @@ class Task(Base):
         self.completed = True
         self.completed_at = now
 
-    def uncomplete(self):
-        """Mark task as uncompleted and reset the completion timestamp."""
-        self.completed = False
-        self.completed_at = None
-
 class Habit(Base):
     __tablename__ = 'habits'
 

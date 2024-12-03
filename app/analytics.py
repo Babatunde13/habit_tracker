@@ -12,11 +12,11 @@ def get_leaderboard(db: Session):
     users = user_service.get_all_users()
 
     for user in users:
-        streak = sum(habit.get_current_streaks() for habit in user.habits)
-        leaderboard.append((user.name, streak))
+        for habit in user.habits:
+            leaderboard.append((user.name, habit.name, habit.get_current_streaks()))
 
     # Sort by streak (highest streak first)
-    leaderboard.sort(key=lambda x: x[1], reverse=True)
+    leaderboard.sort(key=lambda x: x[2], reverse=True)
 
     # return only top 10 users
     leaderboard = leaderboard[:10]

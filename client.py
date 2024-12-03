@@ -236,9 +236,15 @@ def show_current_streaks(token: str):
     habit_service = HabitService(db)
 
     habits = user.habits
+    if len(habits) == 0:
+        click.echo(f"No habits found for the user.")
+        return
+
     for habit in habits:
         streak = habit_service.get_current_streaks(habit)
-        is_day = "day" if streak == 1 or streak == 0 else "days"
+        if streak == 0:
+            continue
+        is_day = "day" if streak == 1 else "days"
         click.echo(f"User {user.name} has habit {habit.name} with a current streak of {streak} {is_day}.")
 
     db.close()
@@ -257,6 +263,10 @@ def longest_streak(token: str):
     if not habit:
         click.echo("No habits found for the user.")
         return
+    
+    if streak == 0:
+        click.echo(f"No streaks found for user {user.name}.")
+        return
 
     click.echo(f"User {user.name} has the longest streak of {streak} days for habit {habit.name}.")
     db.close()
@@ -265,7 +275,7 @@ def longest_streak(token: str):
 @cli.command("longest-streak-for-habit")
 @click.option('--token', prompt='Token', help='The auth token of the user.')
 @click.option('--habit_id', prompt='Habit ID', help='The ID of the habit.', type=int)
-def longest_streak(token: str, habit_id: int):
+def longest_streak_for_habit(token: str, habit_id: int):
     db = next(get_db())
     user = get_user_from_token(db, token)
     if not user:
@@ -279,10 +289,13 @@ def longest_streak(token: str, habit_id: int):
         return
 
     streak = habit.get_longest_streaks()
+    if streak == 0:
+        click.echo(f"No streaks found for user {user.name} for habit {habit.name}.")
+        return
     click.echo(f"User {user.name} has the longest streak of {streak} days for habit {habit.name}.")
     db.close()
 
-# Command to show the current habits for a period
+# Command to show the current habits
 @cli.command("current-habits")
 @click.option('--token', prompt='Token', help='The auth token of the user.')
 def current_habits(token: str):
@@ -350,8 +363,12 @@ def delete_habit(token: str, habit_id: int):
         click.echo(f"Habit with {habit_id} not found for user {user.name} with email {user.email}.")
         return
 
-    habit_service.delete_habit(habit_id, user)
-    click.echo(f"Habit {habit.name} deleted successfully!")
+    try:
+        habit_service.delete_habit(habit_id, user)
+        click.echo(f"Habit {habit.name} deleted successfully!")
+    except ValueError as e:
+        click.echo(f"Error: {e}")
+        db.rollback()
     db.close()
 
 # Command to show the habits struggled most in the last period
@@ -369,14 +386,18 @@ def struggled_habits(token: str, period: str):
         click.echo("User not found!")
         return
 
-    habits = get_habits_struggled_most_last_period(db, user.id, period)
-    if not habits:
-        click.echo(f"No struggled habits found for the period {period}.")
-        return
+    try:
+        habits = get_habits_struggled_most_last_period(db, user.id, period)
+        if not habits:
+            click.echo(f"No struggled habits found for the period {period}.")
+            return
 
-    click.echo(f"Habits struggled most in the last period ({period}):")
-    for habit in habits:
-        click.echo(f"{habit.name}")
+        click.echo(f"Habits struggled most in the last period ({period}):")
+        for habit in habits:
+            click.echo(f"{habit.name}")
+    except ValueError as e:
+        click.echo(f"Error: {e}")
+        db.rollback()
     db.close()
 
 # Command to show the leaderboard
@@ -385,8 +406,8 @@ def leaderboard():
     db = next(get_db())
     leaderboard = get_leaderboard(db)
     click.echo("Leaderboard (Top Streaks):")
-    for rank, (user_name, streak) in enumerate(leaderboard, 1):
-        click.echo(f"{rank}. {user_name} - Streak: {streak} days")
+    for rank, (user_name, habit_name, streak) in enumerate(leaderboard, 1):
+        click.echo(f"{rank}. {user_name} - Streak: {streak} days for habit {habit_name}")
 
     db.close()
 

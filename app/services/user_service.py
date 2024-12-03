@@ -13,6 +13,7 @@ class UserService:
     def register(self, name: str, email: str, password: str, should_commit: bool = True):
         """Register a new user with hashed password."""
         # Check if the user already exists by email
+        email = email.lower().strip()
         existing_user = self.session.query(User).filter(User.email == email).first()
         if existing_user:
             raise ValueError(f"User with email {email} already exists.")
@@ -64,6 +65,7 @@ class UserService:
 
     def login(self, email: str, password: str):
         """Login the user by verifying the password."""
+        email = email.lower().strip()
         user = self.session.query(User).filter(User.email == email).first()
         if user and user.check_password(password):
             return user

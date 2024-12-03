@@ -14,5 +14,17 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
 
+class TestConfig(Config):
+    TESTING = True
+    DATABASE_URL = os.environ.get('TEST_DATABASE_URL') or 'postgresql://tracker:tracker@localhost:5432/tracker_test'
+    DEBUG = True
+
 env = os.environ.get('ENV', 'development')
-config = DevelopmentConfig if env == 'development' else ProductionConfig
+
+configs = {
+    'development': DevelopmentConfig,
+    'production': ProductionConfig,
+    'test': TestConfig
+}
+
+config = configs[env]() or DevelopmentConfig()

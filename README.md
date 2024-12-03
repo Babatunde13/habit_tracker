@@ -344,3 +344,6 @@ python client.py longest-streak-for-habit
 - **Error: "User not found!"**: Make sure you are using a valid token obtained from the login process.
 - **Error: "Habit not found!"**: Ensure the habit ID is correct and belongs to the authenticated user.
 - **Error: "Invalid periodicity"**: Ensure you input a valid periodicity value (daily, weekly, forthnightly, monthly, quarterly, bianually or yearly).
+
+## Testing
+To run the tests, add a `TEST_DATABASE_URL` and then run `make test` or `pytest tests/` in your terminal, this will automatically run migrations for your db, set environment to test and then run the app tests.

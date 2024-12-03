@@ -50,3 +50,8 @@ schedule:
 init_data:
 	@echo "Initializing database..."
 	python init_data.py 
+
+.PHONY: test
+test:
+	@echo "Running tests..."
+	pytest tests/

@@ -58,22 +58,6 @@ def create_initial_data():
     db.close()
     print("Initial data created successfully!")
 
-def get_end_date(start_date: datetime, periodicity: str):
-    if periodicity == "daily":
-        return start_date.replace(hour=23, minute=59, second=59, microsecond=999)
-    elif periodicity == "weekly":
-        days_to_subtract = 7
-    elif periodicity == "fortnightly":
-        days_to_subtract = 14
-    elif periodicity == "monthly":
-        days_to_subtract = 30
-    elif periodicity == "quarterly":
-        days_to_subtract = 90
-    elif periodicity == "biannually":
-        days_to_subtract = 180
-    elif periodicity == "yearly":
-        days_to_subtract = 365
-
 def generate_task_data(periodicity: str, created_at: datetime):
     """Generate example task data for the given habit's periodicity, considering the interval from creation to now."""
     tasks_data = []
