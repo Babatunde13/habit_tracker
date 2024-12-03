@@ -4,6 +4,15 @@ from app.database import SessionLocal, init_db
 from app.services.user_service import UserService
 from app.services.habit_service import HabitService
 
+# Create 5 sample users with passwords
+users_data = [
+    {"name": "Alice", "email": "alice@example.com", "password": "Password1@234"},
+    {"name": "Bob", "email": "bob@example.com", "password": "paSsword@123"},
+    {"name": "Charlie", "email": "charlie@example.com", "password": "$passwOrd123"},
+    {"name": "David", "email": "david@example.com", "password": "p*assworD123"},
+    {"name": "Eve", "email": "eve@example.com", "password": "(passwoEd123"},
+]
+
 # Function to add default users, habits, and tasks
 def create_initial_data():
     db = SessionLocal()
@@ -15,15 +24,6 @@ def create_initial_data():
     if users:
         print("Initial data already exists. Skipping creation.")
         return
-
-    # Create 5 sample users with passwords
-    users_data = [
-        {"name": "Alice", "email": "alice@example.com", "password": "Password1@234"},
-        {"name": "Bob", "email": "bob@example.com", "password": "paSsword@123"},
-        {"name": "Charlie", "email": "charlie@example.com", "password": "$passwOrd123"},
-        {"name": "David", "email": "david@example.com", "password": "p*assworD123"},
-        {"name": "Eve", "email": "eve@example.com", "password": "(passwoEd123"},
-    ]
 
     for user_data in users_data:
         user = user_service.register(user_data["name"], user_data["email"], user_data["password"])

@@ -152,6 +152,8 @@ python client.py help
 
 ### CLI Commands Overview
 
+Sample data are generated using the `init_data.py` script. To login with any of the dummy user, there is a `user` dictionary in [./init_data.py](./init_data.py#L8) use any email and password to authenticate.
+
 Here is an explanation of the available commands in the Habit Tracker CLI(client):
 
 #### 1. **`register`**: Register a new user
