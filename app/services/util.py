@@ -1,62 +1,71 @@
-from app.models import Habit, HabitEvent
 from datetime import datetime, timedelta
 
-def is_in_range(habit: Habit, event: HabitEvent):
+def compute_start_and_end_date(periodicity: str):
     """
-    Check if the habit event was completed within the given range based on habit periodicity.
+    Compute the start and end date based on the periodicity of the habit.
+    If today we start from current time and end at the end of the day.
+    If weekly we start from today and end after 6 days.
+    If fortnightly we start from today and end after 13 days.
+    If monthly we start from beginning of the month and end at the end of the month.
+    If quarterly we start from beginning of the quarter and end at the end of the quarter.
+    If biannually we start from beginning of the half year and end at the end of the half year.
+    If yearly we start from beginning of the year and end at the end of the year.
     """
-    today = datetime.now().date()
-    created_at = event.created_at.date()
-    periodicity = habit.periodicity
 
-    # Handle 'daily' periodicity
+    today = datetime.now()
+    start_date = datetime.now()
+    end_date = None
+    if periodicity == 'daily':
+        end_date = today.replace(hour=23, minute=59, second=59, microsecond=999)
+    elif periodicity == 'weekly':
+        end_date = today.replace(hour=23, minute=59, second=59, microsecond=999) + timedelta(days=6)
+    elif periodicity == 'fortnightly':
+        end_date = today.replace(hour=23, minute=59, second=59, microsecond=999) + timedelta(days=13)
+    elif periodicity == 'monthly':
+        next_month = today.month + 1 if today.month < 12 else 1
+        next_year = today.year + 1 if today.month == 12 else today.year
+        end_date = today.replace(day=1, hour=23, minute=59, second=59, microsecond=999, month=next_month, year=next_year) - timedelta(days=1)
+    elif periodicity == 'quarterly':
+        quarter_start_month = ((today.month - 1) // 3) * 3 + 1
+        start_of_quarter = today.replace(month=quarter_start_month, day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_date = start_of_quarter + timedelta(days=90) - timedelta(seconds=1)
+    elif periodicity == 'biannually':
+        start_of_half_year = today.replace(month=1 if today.month <= 6 else 7, day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_date = start_of_half_year + timedelta(days=181) - timedelta(seconds=1)
+    elif periodicity == 'yearly':
+        next_year = today.year + 1
+        end_date = today.replace(day=1, month=1, year=next_year, hour=0, minute=0, second=0, microsecond=0) - timedelta(seconds=1)
+    else:
+        raise ValueError("Invalid periodicity value")
+
+    return start_date, end_date
+
+def get_last_interval_for_periodicity(periodicity: str, start_date: datetime, end_date: datetime):
+    """
+    Get the last interval for the given periodicity.
+    If weekly, we will get the last week start and end date based on the given start and end date.
+    If fortnightly, we will get the last fortnight start and end date based on the given start and end date.
+    If monthly, we will get the last month start and end date based on the given start and end date.
+    If yearly, we will get the last year start and end date based on the given start and end date.
+    """
+    days_to_subtract = 0
     if periodicity == "daily":
-        return created_at == today
-
-    # Handle 'weekly' periodicity
+        days_to_subtract = 1
     elif periodicity == "weekly":
-        # Get the start of the week for both today and the created_at date (Sunday to Saturday)
-        start_of_week_today = today - timedelta(days=today.weekday())  # Start of this week (Sunday)
-        end_of_week_today = start_of_week_today + timedelta(days=6)  # End of this week (Saturday)
-        
-        start_of_week_created = created_at - timedelta(days=created_at.weekday())  # Start of the week for created_at
-        end_of_week_created = start_of_week_created + timedelta(days=6)  # End of the week for created_at
-
-        return start_of_week_today == start_of_week_created and end_of_week_today == end_of_week_created
-
-    # Handle 'fortnightly' periodicity (every two weeks)
+        days_to_subtract = 7
     elif periodicity == "fortnightly":
-        # Calculate the start of the two-week period (from Sunday to Sunday)
-        start_of_fortnight_today = today - timedelta(days=today.weekday() + 1 + 7)  # Start of last fortnight (two Sundays ago)\
-        end_of_fortnight = start_of_fortnight_today + timedelta(days=13)  # 13 days after the start of the fortnight
-
-        start_of_fortnight_created = created_at - timedelta(days=created_at.weekday() + 1)  # Start of the fortnight for created_at
-        end_of_fortnight_created = start_of_fortnight_created + timedelta(days=13)  # 13 days after the start of the fortnight
-        return start_of_fortnight_today == start_of_fortnight_created and end_of_fortnight == end_of_fortnight_created
-
-    # Handle 'monthly' periodicity
+        days_to_subtract = 14
     elif periodicity == "monthly":
-        # Compare the month and year
-        return today.year == created_at.year and today.month == created_at.month
-
-    # Handle 'quarterly' periodicity (every 3 months)
+        days_to_subtract = 30
     elif periodicity == "quarterly":
-        # Calculate the quarter of the year (1-4)
-        quarter_today = (today.month - 1) // 3 + 1
-        quarter_created = (created_at.month - 1) // 3 + 1
-        return today.year == created_at.year and quarter_today == quarter_created
-
-    # Handle 'biannually' periodicity (every 6 months)
+        days_to_subtract = 90
     elif periodicity == "biannually":
-        # Compare if the habit was created in the same half of the year
-        half_of_year_today = 1 if today.month <= 6 else 2
-        half_of_year_created = 1 if created_at.month <= 6 else 2
-        return today.year == created_at.year and half_of_year_today == half_of_year_created
-
-    # Handle 'yearly' periodicity
+        days_to_subtract = 180
     elif periodicity == "yearly":
-        # Compare if the habit was created in the same year
-        return today.year == created_at.year
-
-    # If the periodicity doesn't match any of the expected values, return False
-    return False
+        days_to_subtract = 365
+    else:
+        raise ValueError("Invalid periodicity value")
+    
+    last_start_date = start_date - timedelta(days=days_to_subtract)
+    last_end_date = end_date - timedelta(days=days_to_subtract)
+    return last_start_date, last_end_date

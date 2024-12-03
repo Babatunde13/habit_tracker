@@ -10,7 +10,6 @@ help:
 	@echo "  migrate-show    Show migration history"
 	@echo "  schedule        Run habit tracker"
 	@echo "  init_data       Initialize database"
-	@echo "  cli             Run CLI"
 
 .PHONY: install
 install:
@@ -51,8 +50,3 @@ schedule:
 init_data:
 	@echo "Initializing database..."
 	python init_data.py 
-
-.PHONY:cli
-cli:
-	@echo "Running CLI..."
-	python cli.

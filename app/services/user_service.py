@@ -1,5 +1,5 @@
-from app.models import User
-from app.config import config
+from ..models import User
+from ..config import config
 
 from sqlalchemy.orm import Session
 import jsonwebtoken as jwt
@@ -10,7 +10,7 @@ class UserService:
     def __init__(self, session: Session):
         self.session = session
 
-    def register(self, name: str, email: str, password: str):
+    def register(self, name: str, email: str, password: str, should_commit: bool = True):
         """Register a new user with hashed password."""
         # Check if the user already exists by email
         existing_user = self.session.query(User).filter(User.email == email).first()
@@ -21,14 +21,24 @@ class UserService:
         user = User(name=name, email=email)
         user.set_password(password)  # Hash the password and store it
         self.session.add(user)
-        self.session.commit()
+
+        if should_commit:
+            self.session.commit()
 
         return user
+    
+    def get_all_users(self):
+        """Retrieve all users."""
+        return self.session.query(User).all()
 
     def get_user(self, email: str):
         """Retrieve a user by their email."""
         # get all fields of the user
         return self.session.query(User).filter(User.email == email).first()
+    
+    def get_user_by_id(self, user_id: int):
+        """Retrieve a user by their ID."""
+        return self.session.query(User).filter(User.id == user_id).first()
 
     def get_auth_token(self, email: str) -> str:
         """Generate an authentication token for the user."""

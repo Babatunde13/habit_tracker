@@ -108,21 +108,3 @@ def validate_create_habit(name: str, periodicity: str) -> bool:
         return False
     
     return True
-
-def validate_add_task(habit_id: int, description: str):
-    """
-    Validate inputs for adding a task.
-    - Task description should not be empty
-    """
-    
-    # Validate task description
-    if not description:
-        print("Task description is required.")
-        return False
-    
-    if is_number(habit_id):
-        print("Habit ID must be a number")
-        return False
-    
-    return True
-

@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, types, func
-from sqlalchemy.orm import relationship
 from datetime import datetime
 import bcrypt
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, types, func
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -37,7 +37,8 @@ class Task(Base):
 
     id = Column(Integer, primary_key=True)
     description = Column(String, nullable=False)
-    created_at = Column(types.DateTime, nullable=False, default=func.now())
+    start_date = Column(types.DateTime, nullable=False, default=func.now())
+    end_date = Column(types.DateTime, nullable=False) # Deadline for the task
     updated_at = Column(types.DateTime, nullable=False, default=func.now(), onupdate=func.now())
     completed = Column(Boolean, default=False)
     completed_at = Column(types.DateTime, nullable=True)  # Timestamp for when the task was completed
@@ -47,25 +48,16 @@ class Task(Base):
 
     def complete(self):
         """Mark task as completed and set the completion timestamp."""
+        now = datetime.now()
+        if now > self.end_date:
+            raise ValueError("Task is overdue and cannot be completed.")
         self.completed = True
-        self.completed_at = datetime.now()
+        self.completed_at = now
 
     def uncomplete(self):
         """Mark task as uncompleted and reset the completion timestamp."""
         self.completed = False
         self.completed_at = None
-
-class HabitEvent(Base):
-    __tablename__ = 'habit_events'
-
-    id = Column(Integer, primary_key=True)
-    created_at = Column(types.DateTime, nullable=False, default=func.now())
-    updated_at = Column(types.DateTime, nullable=False, default=func.now(), onupdate=func.now())
-    date = Column(types.DateTime, nullable=False, default=func.now())
-    completed = Column(Boolean, default=False)
-    habit_id = Column(Integer, ForeignKey('habits.id'))
-
-    habit = relationship('Habit', back_populates='habit_events')
 
 class Habit(Base):
     __tablename__ = 'habits'
@@ -78,23 +70,23 @@ class Habit(Base):
     user_id = Column(Integer, ForeignKey('users.id'))
 
     user = relationship('User', back_populates='habits')
-    habit_events = relationship('HabitEvent', back_populates='habit', cascade='all, delete-orphan')
     tasks = relationship('Task', back_populates='habit', cascade='all, delete-orphan')
 
-    def get_streak(self) -> int:
-        """Dynamically compute the streak based on habit events."""
+    def get_streaks(self) -> int:
+        """Dynamically compute the streak based on task completion."""
         streak = 0
-        for event in reversed(self.habit_events):
-            if event.completed:
+        for task in reversed(self.tasks):
+            if task.completed:
                 streak += 1
             else:
                 break
         return streak
 
-    def add_event(self, completed: bool):
-        """Add a new habit event (check-off) for today."""
-        event = HabitEvent(habit_id=self.id, completed=completed, date=datetime.now())
-        self.habit_events.append(event)
+    def add_task(self, description: str, start_date: datetime, end_date: datetime = None):
+        """Add a new task to the habit."""
+        task = Task(description=description, completed=False, end_date=end_date, start_date=start_date)
+        self.tasks.append(task)
+        return task
 
     def get_tasks(self):
         """Get all tasks associated with the habit."""

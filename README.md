@@ -30,12 +30,12 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
 
 ## Overview
 
-The **Habit Tracker Application** allows users to create, track, and manage their habits. The app has a Command Line Interface (CLI) for interacting with the backend, which enables user registration, habit creation, task management, and provides analytics for habits.
+The **Habit Tracker Application** allows users to create, track, and manage their habits. The app has a Command Line Interface (CLI) for interacting with the backend, which enables user registration, habit creation, task management, and provides analytics for habits. When a new habit is created we immediately create a task for it to track for current period. I also setup a scheduler that runs every morning at 12am to create tasks at the beginning of the next period.
 
 ### Features:
 - **User Registration** and **Login**.
 - **Create and Manage Habits**.
-- **Add and List Tasks**.
+- **List and Complete Tasks**.
 - **Track Habit Streaks and Analytics**.
 - **Leaderboard** for tracking the top users by their habit streaks.
 - **Scheduler** for running scheduled tasks like tracking missed habits and updating habit streaks.
@@ -60,7 +60,6 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
    ```
 
 2. **Build and Run the Application**:
-
    Run the following command to set up the database and start the application:
 
    ```
@@ -99,17 +98,9 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
    ```
 
 2. **Set Up the PostgreSQL Database**:
-
    - Create a PostgreSQL database locally (or use any external PostgreSQL instance).
-   - Ensure you have the following environment variables set:
+   - Ensure you have the environment variables set as defined in the `.env.sample` file:
 
-    ```bash
-     DB_HOST=localhost
-     DB_PORT=5432
-     DB_NAME=habit_tracker
-     DB_USER=tracker
-     DB_PASSWORD=tracker
-    ```
 
 3. **Run Migrations**:
 
@@ -150,17 +141,17 @@ After setting up the environment (either via Docker or manually), you can intera
 To view the available commands, run:
 
 ```bash
-python cli.py help
+python client.py help
 ```
 
 ### CLI Commands Overview
 
-Here is an explanation of the available commands in the Habit Tracker CLI:
+Here is an explanation of the available commands in the Habit Tracker CLI(client):
 
 #### 1. **`register`**: Register a new user
 
 ```bash
-python cli.py register
+python client.py register
 ```
 
 **Options**:
@@ -173,7 +164,7 @@ This command registers a new user in the system.
 #### 2. **`login`**: Log in to an existing user account
 
 ```bash
-python cli.py login
+python client.py login
 ```
 
 **Options**:
@@ -185,7 +176,7 @@ This command logs in a user and provides the authentication token for further op
 #### 3. **`update-password`**: Update user password
 
 ```bash
-python cli.py update-password
+python client.py update-password
 ```
 
 **Options**:
@@ -198,7 +189,7 @@ This command allows the user to change their password.
 #### 4. **`create-habit`**: Create a new habit
 
 ```bash
-python cli.py create-habit
+python client.py create-habit
 ```
 
 **Options**:
@@ -206,12 +197,12 @@ python cli.py create-habit
 - `--name`: Name of the habit (required)
 - `--periodicity`: How often the habit should occur (daily, weekly, etc.) (required)
 
-This command creates a new habit for the user.
+This command creates a new habit for the user and the first task for the habit.
 
 #### 5. **`list-habits`**: List all habits of a user
 
 ```bash
-python cli.py list-habits
+python client.py list-habits
 ```
 
 **Options**:
@@ -219,23 +210,10 @@ python cli.py list-habits
 
 This command lists all habits of the user.
 
-#### 6. **`add-task`**: Add a task to a habit
+#### 6. **`list-tasks`**: List all tasks of a habit
 
 ```bash
-python cli.py add-task
-```
-
-**Options**:
-- `--token`: The auth token of the user (required)
-- `--habit_id`: The ID of the habit (required)
-- `--description`: Description of the task (required)
-
-This command allows the user to add a new task to a specific habit.
-
-#### 7. **`list-tasks`**: List all tasks of a habit
-
-```bash
-python cli.py list-tasks
+python client.py list-tasks
 ```
 
 **Options**:
@@ -244,10 +222,10 @@ python cli.py list-tasks
 
 This command lists all tasks for a given habit.
 
-#### 8. **`complete-task`**: Mark a task as completed
+#### 7. **`complete-task`**: Mark a task as completed
 
 ```bash
-python cli.py complete-task
+python client.py complete-task
 ```
 
 **Options**:
@@ -256,22 +234,10 @@ python cli.py complete-task
 
 This command marks a task as completed.
 
-#### 9. **`uncomplete-task`**: Mark a task as uncompleted
+#### 8. **`show-current-streaks`**: Show current streaks for all habits
 
 ```bash
-python cli.py uncomplete-task
-```
-
-**Options**:
-- `--token`: The auth token of the user (required)
-- `--task_id`: The ID of the task to mark as uncompleted (required)
-
-This command marks a task as uncompleted.
-
-#### 10. **`show-current-streaks`**: Show current streaks for all habits
-
-```bash
-python cli.py show-current-streaks
+python client.py show-current-streaks
 ```
 
 **Options**:
@@ -279,10 +245,10 @@ python cli.py show-current-streaks
 
 This command shows the current streaks for all habits associated with the user.
 
-#### 11. **`longest-streak`**: Show the user's longest streak
+#### 9. **`longest-streak`**: Show the user's longest streak
 
 ```bash
-python cli.py longest-streak
+python client.py longest-streak
 ```
 
 **Options**:
@@ -290,10 +256,10 @@ python cli.py longest-streak
 
 This command shows the longest streak for any of the user's habits.
 
-#### 12. **`current-habits`**: Show habits for a given period (e.g., weekly, monthly)
+#### 10. **`current-habits`**: Show habits for a given period (e.g., weekly, monthly)
 
 ```bash
-python cli.py current-habits
+python client.py current-habits
 ```
 
 **Options**:
@@ -302,10 +268,10 @@ python cli.py current-habits
 
 This command shows the current habits based on the specified period.
 
-#### 13. **`struggled-habits`**: Show the habits you struggled with the most in the last period
+#### 11. **`struggled-habits`**: Show the habits you struggled with the most in the last period
 
 ```bash
-python cli.py struggled-habits
+python client.py struggled-habits
 ```
 
 **Options**:
@@ -314,13 +280,38 @@ python cli.py struggled-habits
 
 This command shows the habits you struggled with the most in the last specified period.
 
-#### 14. **`leaderboard`**: Show the leaderboard based on the longest streaks
+#### 12. **`leaderboard`**: Show the leaderboard based on the longest streaks
 
 ```bash
-python cli.py leaderboard
+python client.py leaderboard
 ```
 
 This command shows the top users with the longest streaks.
+
+#### 12. **`delete-habit`**: Show the leaderboard based on the longest streaks
+
+```bash
+python client.py delete-habit
+```
+
+**Options**:
+- `--token`: The auth token of the user (required)
+- `--habit_id`: The ID of the habit (required)
+
+This command deletes a user's habit and all it's tasks.
+
+#### 13. **`update-habit`**: Show the leaderboard based on the longest streaks
+
+```bash
+python client.py update-habit
+```
+
+**Options**:
+- `--token`: The auth token of the user (required)
+- `--name`: The new name of the habit (required)
+- `--habit_id`: The ID of the habit (required)
+
+This command updates a user's existing habit.
 
 ## Troubleshooting
 - **Error: "User not found!"**: Make sure you are using a valid token obtained from the login process.

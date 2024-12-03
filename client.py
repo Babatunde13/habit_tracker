@@ -1,14 +1,15 @@
 import click
-from app.models import User
 from app.services.habit_service import HabitService
 from app.services.task_service import TaskService
 from app.services.user_service import UserService
 from app.database import SessionLocal
-from app.analytics import get_leaderboard, get_user_longest_streak, get_current_habits_for_period, get_habits_struggled_most_last_period
+from app.analytics import (
+    get_leaderboard, get_user_longest_streak,
+    get_current_habits_for_period, get_habits_struggled_most_last_period
+)
 from validation import (
     validate_create_habit, validate_register, validate_login,
-    validate_update_password, validate_add_task, is_number,
-    is_valid_periodicity
+    validate_update_password, is_number, is_valid_periodicity
 )
 
 # Dependency to get the DB session
@@ -36,6 +37,7 @@ def get_user_from_token(db, token: str):
 def register(name: str, email: str, password: str):
     if not validate_register(name, email, password):
         click.echo("Invalid input")
+        return
 
     db = next(get_db())
     user_service = UserService(db)
@@ -55,6 +57,7 @@ def register(name: str, email: str, password: str):
 def login(email: str, password: str):
     if not validate_login(email, password):
         click.echo("Invalid input")
+        return
 
     db = next(get_db())
     user_service = UserService(db)
@@ -77,6 +80,7 @@ def login(email: str, password: str):
 def update_password(email: str, old_password: str, new_password: str):
     if not validate_update_password(email, old_password, new_password):
         click.echo("Invalid input")
+        return
 
     db = next(get_db())
     user_service = UserService(db)
@@ -96,6 +100,7 @@ def update_password(email: str, old_password: str, new_password: str):
 def create_habit(token: str, name: str, periodicity: str):
     if not validate_create_habit(name, periodicity):
         click.echo("Invalid Input")
+        return
 
     db = next(get_db())
     habit_service = HabitService(db)
@@ -105,10 +110,36 @@ def create_habit(token: str, name: str, periodicity: str):
         return
 
     habit = habit_service.create_habit(user=user, name=name, periodicity=periodicity.lower())
-    print("Habit is almos tdone")
-    db.add(habit)
-    db.commit()
     click.echo(f"Habit {name} created for user {user.name}.")
+    task = habit.tasks[0]
+    click.echo(f"A new task has been created for the habit with the description {task.description} with start date {task.start_date.isoformat()} and end date {task.end_date.isoformat()}")
+    db.close()
+
+# Update existing habit
+@cli.command("update-habit")
+@click.option('--token', prompt='Token', help='The auth token of the user.')
+@click.option('--name', prompt='Habit name', help='The name of the habit.')
+@click.option('--habit_id', prompt='Habit ID', help='The ID of the habit.', type=int)
+def update_habit(token: str, name: str, habit_id: int):
+    if not validate_create_habit(name, "daily"):
+        click.echo("Invalid Input")
+        return
+
+    db = next(get_db())
+    habit_service = HabitService(db)
+    user = get_user_from_token(db, token)
+    if not user:
+        click.echo("User not found!")
+        return
+
+    habit = habit_service.get_habit(user.id, habit_id)
+    if not habit:
+        click.echo("Habit not found!")
+        return
+
+    old_habit_name = habit.name
+    habit = habit_service.update_habit(habit=habit, name=name)
+    click.echo(f"Habit \"{old_habit_name}\" changed to \"{name}\".")
     db.close()
 
 # Command to list available habits
@@ -122,37 +153,10 @@ def list_habits(token: str):
         return
 
     habit_service = HabitService(db)
-    habits = habit_service.get_all_habits(user)
+    habits = habit_service.get_user_habits(user)
     click.echo(f"Habits for user {user.name}:")
     for habit in habits:
         click.echo(f"{habit.id}. {habit.name} ({habit.periodicity})")
-    db.close()
-
-# Command to add a task to a habit
-@cli.command("add-task")
-@click.option('--token', prompt='Token', help='The auth token of the user.')
-@click.option('--habit_id', prompt='Habit ID', help='The ID of the habit.', type=int)
-@click.option('--description', prompt='Task description', help='Description of the task.')
-def add_task(token: str, habit_id: int, description: str):
-    if  not validate_add_task(habit_id, description):
-        click.echo("Invalid input")
-
-    db = next(get_db())
-    user = get_user_from_token(db, token)
-    if not user:
-        click.echo("User not found!")
-        return
-
-    habit_service = HabitService(db)
-    habit = habit_service.get_habit(user.id, habit_id)
-    if not habit:
-        click.echo("Habit not found!")
-        return
-    task_service = TaskService(db)
-    task = task_service.create_task(habit, description)
-    db.add(task)
-    db.commit()
-    click.echo(f"Task '{description}' added to habit {habit.name}.")
     db.close()
 
 # Command to list tasks for a habit
@@ -163,6 +167,7 @@ def list_tasks(token: str, habit_id: int):
     if not is_number(habit_id):
         click.echo("Habit ID must be an number!")
         click.echo("Invalid input")
+        return
 
     db = next(get_db())
     user = get_user_from_token(db, token)
@@ -183,7 +188,13 @@ def list_tasks(token: str, habit_id: int):
         click.echo(f"Tasks for habit {habit.name}:")
         for task in tasks:
             status = "Completed" if task.completed else "Pending"
-            click.echo(f"{task.id}. {task.description} - {status}")
+            start_date = task.start_date.isoformat()
+            end_date = task.end_date.isoformat()
+            message = f"{task.id}. {task.description} - {status}, start at {start_date} - end at {end_date}."
+            if status == "Completed":
+                message += f" Completed at {task.completed_at.isoformat()}"
+            click.echo(message)
+
     db.close()
 
 # Command to mark a task as completed
@@ -194,6 +205,7 @@ def complete_task(token: str, task_id: int):
     if not is_number(task_id):
         click.echo("Task ID must be an number!")
         click.echo("Invalid input")
+        return
 
     db = next(get_db())
     user = get_user_from_token(db, token)
@@ -204,33 +216,11 @@ def complete_task(token: str, task_id: int):
     task_service = TaskService(db)
     try:
         task = task_service.complete_task(user.id, task_id)
-        db.commit()
         click.echo(f"Task {task.description} marked as completed.")
     except ValueError as e:
         click.echo(f"Error: {e}")
         db.rollback()
     
-    db.close()
-
-# Command to mark a task as uncompleted
-@cli.command("uncomplete-task")
-@click.option('--token', prompt='Token', help='The auth token of the user.')
-@click.option('--task_id', prompt='Task ID', help='The ID of the task.', type=int)
-def uncomplete_task(token: str, task_id: int):
-    if not is_number(task_id):
-        click.echo("Task ID must be an number!")
-        click.echo("Invalid input")
-
-    db = next(get_db())
-    user = get_user_from_token(db, token)
-    if not user:
-        click.echo("User not found!")
-        return
-
-    task_service = TaskService(db)
-    task = task_service.uncomplete_task(user.id, task_id)
-    db.commit()
-    click.echo(f"Task {task.description} marked as uncompleted.")
     db.close()
 
 # Command to show analytics
@@ -244,16 +234,13 @@ def show_current_streaks(token: str):
         return
 
     habit_service = HabitService(db)
-    user = db.query(User).filter(User.id == user.id).first()
-    if not user:
-        click.echo("User not found!")
-        return
 
     habits = user.habits
     for habit in habits:
-        streak = habit_service.get_streak(habit)
+        streak = habit_service.get_streaks(habit)
         is_day = "day" if streak == 1 or streak == 0 else "days"
         click.echo(f"User {user.name} has habit {habit.name} with a current streak of {streak} {is_day}.")
+
     db.close()
 
 # Command to show the user's longest streak
@@ -266,7 +253,7 @@ def longest_streak(token: str):
         click.echo("User not found!")
         return
 
-    habit, streak = get_user_longest_streak(db, user.id)
+    habit, streak = get_user_longest_streak(user)
     if not habit:
         click.echo("No habits found for the user.")
         return
@@ -282,6 +269,7 @@ def current_habits(token: str, period: str):
     if not is_valid_periodicity(period):
         click.echo("Invalid period. Please provide a valid period (daily, weekly, forthnightly, monthly, quarterly, bianually, yearly)")
         return
+
     db = next(get_db())
     user = get_user_from_token(db, token)
     if not user:
@@ -289,13 +277,39 @@ def current_habits(token: str, period: str):
         return
 
     habits = get_current_habits_for_period(db, user.id, period.lower())
-    if not habits:
+    if len(habits) < 0:
         click.echo(f"No habits found for the user for the period {period}.")
         return
 
-    click.echo(f"Current habits for user {user.name} for period {period}:")
+    click.echo(f"Current habits for user {user.name} for {period} period:")
     for habit in habits:
-        click.echo(f"{habit.id}. {habit.name}")
+        click.echo(f"{habit.id}. {habit.name} with a current streak of {habit.get_streaks()} days")
+
+    db.close()
+
+@cli.command("delete-habit")
+@click.option('--token', prompt='Token', help='The auth token of the user.')
+@click.option('--habit_id', prompt='Habit ID', help='The ID of the habit.', type=int)
+def delete_habit(token: str, habit_id: int):
+    if not is_number(habit_id):
+        click.echo("Habit ID must be an number!")
+        click.echo("Invalid input")
+        return
+
+    db = next(get_db())
+    user = get_user_from_token(db, token)
+    if not user:
+        click.echo("User not found!")
+        return
+
+    habit_service = HabitService(db)
+    habit = habit_service.get_habit(user.id, habit_id)
+    if not habit:
+        click.echo(f"Habit with {habit_id} not found for user {user.name} with email {user.email}.")
+        return
+
+    habit_service.delete_habit(habit_id, user)
+    click.echo(f"Habit {habit.name} deleted successfully!")
     db.close()
 
 # Command to show the habits struggled most in the last period
