@@ -7,7 +7,7 @@ from app.services.habit_service import HabitService
 from app.services.task_service import TaskService
 
 @pytest.fixture
-def runner(delete_db_data):
+def runner():
     """Create a runner to test CLI commands."""
     return CliRunner()
 

@@ -1,3 +1,4 @@
+import os
 import pytest
 from app.database import SessionLocal, init_db
 from app.models import User, Habit, Task
@@ -5,35 +6,28 @@ from app.services.habit_service import HabitService
 from app.services.user_service import UserService
 from app.services.util import compute_start_and_end_date
 from configure_alembic import set_db_url, migrate_up
-import os
 
-# Path to the alembic.ini file (make sure this path is correct)
-ALEMBIC_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'alembic.ini')
-os.environ['ENV'] = 'test'  # Set the environment to test
+@pytest.fixture(scope="session", autouse=True)
+def setup():
+    """Set the environment to 'test' before running tests."""
+    env = os.environ.get('ENV')
+    os.environ['ENV'] = 'test'
+    from app.config import config
 
-def delete_all_data():
-    """Delete all data from the database."""
-    db = SessionLocal()
-    db.query(Task).delete()
-    db.query(Habit).delete()
-    db.query(User).delete()
-    db.commit()
-    db.close()
-
-@pytest.fixture(scope='session')
-def delete_db_data():
-    """Fixture to delete all data from the database before and after the test session."""
-    delete_all_data()
+    set_db_url(config.TEST_DATABASE_URL) # Set the database URL for the test database
+    migrate_up() # Run migrations before running tests
+    yield  # The test runs here
+    if env:
+        os.environ['ENV'] = env  # Reset the environment variable after the test
+    set_db_url() # Reset the database URL to the development database
+    
 
 @pytest.fixture(scope='session')
-def db_session():
+def db_session(setup):
     """Fixture to manage the database session for the entire test suite."""
 
     # Setup: Initialize the database schema and run migrations
-    set_db_url()  # Set the database URL in the alembic.ini file
-    migrate_up()  # Run the migrations
     init_db()  # Ensure the database schema is created
-    delete_all_data()  # Optionally, delete all data from the database
 
     # Create a session for interacting with the database
     db = SessionLocal()
@@ -43,10 +37,19 @@ def db_session():
     db.rollback()  # Rollback the transaction to clean up the test data
     db.close()
 
+
+@pytest.fixture(scope='function', autouse=True)
+def delete_db_data(db_session):
+    """Fixture to delete all data from the database before and after the test session."""
+    db_session.query(Task).delete()
+    db_session.query(Habit).delete()
+    db_session.query(User).delete()
+    db_session.commit()
+
+
 @pytest.fixture
 def sample_user(db_session):
     """Fixture to create a sample user for testing."""
-    delete_all_data()  # Delete all data before creating a new user
     user = User(name="Test User", email="testuser@example.com")
     user.set_password("pasSword@123")
     db_session.add(user)
@@ -54,7 +57,7 @@ def sample_user(db_session):
     return user
 
 @pytest.fixture(autouse=True)
-def reset_db_after_test(db_session):
+def teardown(db_session):
     """Fixture to reset the database after each test."""
     
     # At the start of each test, the session is rolled back to clean any changes

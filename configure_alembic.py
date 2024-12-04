@@ -1,13 +1,13 @@
 from app.config import config
 
-def set_db_url():
+def set_db_url(url: str = None):
     # open the alembic.ini file replace the line that starts with "sqlalchemy.url" with the following line
     with open("alembic.ini", "r") as f:
         lines = f.readlines()
     with open("alembic.ini", "w") as f:
         for line in lines:
             if line.startswith("sqlalchemy.url"):
-                f.write(f"sqlalchemy.url = {config.DATABASE_URL}\n")
+                f.write(f"sqlalchemy.url = {url or config.DATABASE_URL}\n")
             else:
                 f.write(line)
 

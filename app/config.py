@@ -6,6 +6,7 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     DATABASE_URL = os.environ.get('DATABASE_URL') or 'postgresql://tracker:tracker@localhost:5432/tracker'
+    TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_URL') or 'postgresql://tracker:tracker@localhost:5432/tracker_test'
 
 class DevelopmentConfig(Config):
     DEBUG = True
