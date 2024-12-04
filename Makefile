@@ -20,7 +20,7 @@ install:
 migrate-up:
 #	@echo "Migrating up..."
 	@echo "Migrating up..."
-	alembic upgrade head
+	python configure_alembic.py
 
 .PHONY: migrate-down
 migrate-down:
@@ -30,7 +30,7 @@ migrate-down:
 
 .PHONY: migrate-revision
 migrate-revision:
-#	@echo "Creating migration revision..."
+    @echo "Creating migration revision..."
 	@echo "Creating migration revision..."
 	@read -p "Enter revision message: " message; \
 	alembic revision --autogenerate -m "$$message"

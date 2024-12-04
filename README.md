@@ -42,9 +42,9 @@ The **Habit Tracker Application** allows users to create, track, and manage thei
 
 ## Installation
 
-You can set up the application using **Docker** or **Manually**. Both methods will set up the database, create dummy data, and configure the scheduler.
+You can set up the application **Manually**. This will create dummy data, and configure the scheduler. But before we do this we need to have our PostgreSQL database ready. If you already have one you can skip the next step, otherwise you can setup your database using Docker and docker compose
 
-### 1. **Installation via Docker**
+### 1. **Installation Of Postgres via Docker**
 
 **Requirements**:
 - Docker
@@ -60,7 +60,7 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
    ```
 
 2. **Build and Run the Application**:
-   Run the following command to set up the database and start the application:
+   Run the following command to set up the database in the background:
 
    ```
    docker-compose up -d
@@ -68,31 +68,20 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
 
    This command does the following:
    - **Sets up the PostgreSQL database**.
-   - **Runs the application**.
-   - **Creates dummy data** in the database.
-   - **Runs the scheduler** to automatically create tasks at the beginning of habits next period.
+   - **The database URL will be postgresql://tracker:tracker@localhost:5432/tracker** as defined in the Docker compose file.
 
-3. **Access the Application**:
 
-   The application will be available for CLI interaction once the setup is complete. You can run the CLI commands as described below.
-
-### 2. **Manual Installation**
+### 2. **Setting Up the Application**
 
 **Requirements**:
 - PostgreSQL Database
 - Python 3.9+
-- Make (optional, but recommended for convenience)
 
 #### Steps to Install:
 
-1. **Clone the Repository and setup dependencies**:
+1. **Setup your virtual environment, this can vary depending on your OS**:
+    In the same directory
 
-   ```bash
-   git clone https://github.com/Babatunde13/habit_tracker.git
-   cd habit_tracker
-   ```
-
-   ##### Setup your virtual environment, this can vary depending on your OS
    ```bash
    pip install --upgrade pip
    pip install virtualenv # creates virtual environment
@@ -106,14 +95,22 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
    
 
 2. **Set Up the PostgreSQL Database**:
-   - Create a PostgreSQL database locally (or use any external PostgreSQL instance).
+   - If you have your PostgreSQL database copy your database URL, it should be in the form `postgresql://<username>:<password>@<host>:<port>/<dbname>` or you used the step for Docker above, the db URL will be `postgresql://tracker:tracker@localhost:5432/tracker`. Put this in your `.env` file
+   - Setup your test database URL, this will be used for testing purpose, If you have your PostgreSQL Database or you used the Docker step above, you can run the `create_test_db.sh` script, ensure the username, host and database name for your primary db is correct(The data in the file matches the Docker config). Running the script should prompt you for a password, this is the password of your Primary database, for the Docker setup this is `tracker`. Use the database name `tracker_test` to construct your test Database URL e.g postgresql://tracker:tracker@localhost:5432/tracker_test
    - Ensure you have the environment variables set as defined in the `.env.sample` file:
+   ```
+   DATABASE_URL=postgresql://tracker:tracker@localhost:5432/tracker
+   TEST_DATABASE_URL=postgresql://tracker:tracker@localhost:5432/tracker_test
+   ENV=production
+   SECRET_KEY=secret
+   ```
+   Change `SECRET_KEY` to something more difficult to guess. If ENV is production it removes debug logs from the console when running the application. During testing the ENV is forces to `test` automatically.
 
 
 3. **Run Migrations**:
 
    ```bash
-   python configure_alembic.py # sets the db url inside the alembic.ini file and runs migration
+   python configure_alembic.py # sets the db url inside the alembic.ini file based on the DATABASE_URL env and runs migration
    ```
 
    This command will run the necessary migrations to set up the database schema.
@@ -123,17 +120,18 @@ You can set up the application using **Docker** or **Manually**. Both methods wi
    Once the migrations are complete, run:
 
     ```bash
-   make init_data # or "python init_data.py" if you do not have make command
+   python init_data.p
    ```
 
    This will insert some dummy data into the database for testing purposes.
 
 5. **Run the Scheduler**:
 
-   The scheduler will track missed tasks and update habit streaks:
+   The scheduler will be used to automatically create new tasks for habits at the start of next period:
+   Run this in a new terminal(same directory), as it will not stop. We can also run this script in the background, this approach vary depending on the OS.
 
     ```bash
-   make schedule # or "python scheduler.py" if you do not have make command
+   python scheduler.py
    ```
 
 6. **Run the Application**:
@@ -346,4 +344,4 @@ python client.py longest-streak-for-habit
 - **Error: "Invalid periodicity"**: Ensure you input a valid periodicity value (daily, weekly, forthnightly, monthly, quarterly, bianually or yearly).
 
 ## Testing
-To run the tests, add a `TEST_DATABASE_URL` and then run `make test` or `pytest tests/` in your terminal, this will automatically run migrations for your db, set environment to test and then run the app tests.
+To run the tests, add a `TEST_DATABASE_URL` and then run `pytest tests/` in your terminal, this will automatically run migrations for your db, set environment to test and then run the app tests.
