@@ -4,6 +4,8 @@
 
 The **Habit Tracker Application** allows users to create, track, and manage their habits. The app has a Command Line Interface (CLI) for interacting with the backend, which enables user registration, habit creation, task management, and provides analytics for habits.
 
+![Arch Diagram](./habit_tracker.drawio.png)
+
 ### Features:
 - **User Registration** and **Login**.
 - **Create and Manage Habits**.
